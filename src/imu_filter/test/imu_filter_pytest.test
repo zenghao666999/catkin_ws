@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!-- imu_filter_pytest.test : rostest launch file -->
+<launch>
+  <test test-name="imu_filter_pytest"
+        pkg="filter"
+        type="ros_pytest_runner.py"
+        time-limit="120.0" />
+</launch>

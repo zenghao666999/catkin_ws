@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ================================================================
+  rosbridge Test Bridge for imu_filter
+    - rosbridge_websocket: WebSocket bridge on port 9090
+    - rosapi: exposes ROS master API to external clients
+  ================================================================ -->
+
+  <!-- rosbridge_websocket: expose ROS over WebSocket -->
+  <node name="rosbridge_websocket" pkg="rosbridge_server" type="rosbridge_websocket"
+        output="screen">
+    <param name="port" value="9090"/>
+    <param name="address" value="0.0.0.0"/>
+    <param name="retry_startup_delay" value="3.0"/>
+    <param name="fragment_timeout" value="600"/>
+    <param name="delay_between_messages" value="0"/>
+    <param name="max_message_size" value="10000000"/>
+    <param name="unregister_timeout" value="10.0"/>
+    <param name="use_compression" value="false"/>
+  </node>
+
+  <!-- rosapi: make ROS master info queryable over WebSocket -->
+  <node name="rosapi" pkg="rosapi" type="rosapi_node" output="screen"/>
+</launch>

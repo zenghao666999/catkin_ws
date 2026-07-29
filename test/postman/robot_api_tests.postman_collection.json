@@ -1,0 +1,314 @@
+{
+  "info": {
+    "name": "Robot API Tests (ROS via rosbridge)",
+    "description": "Automated API tests for IMU filter, motion control, and ROS service calls through rosbridge WebSocket.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. System Health",
+      "description": "Verify rosbridge is alive and ROS master is reachable.",
+      "item": [
+        {
+          "name": "List all ROS topics via rosapi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has topics array\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.topics).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test(\"Contains /rosout\", () => {",
+                  "    const names = pm.response.json().topics.map(t => t);",
+                  "    pm.expect(names).to.include('/rosout');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"call_service\",\"service\":\"/rosapi/topics\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        },
+        {
+          "name": "List all ROS services via rosapi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has services\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.services).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"call_service\",\"service\":\"/rosapi/services\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. IMU Data Pipeline",
+      "description": "Subscribe to /imu_data, publish a test IMU message, verify data flows through rosbridge.",
+      "item": [
+        {
+          "name": "Subscribe to /imu_data topic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Subscribe acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('subscribe');",
+                  "    pm.expect(json.topic).to.equal('/imu_data');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"subscribe\",\"topic\":\"/imu_data\",\"type\":\"sensor_msgs/Imu\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        },
+        {
+          "name": "Publish test IMU message to /imu_data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Publish acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('publish');",
+                  "    pm.expect(json.topic).to.equal('/imu_data');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"publish\",\"topic\":\"/imu_data\",\"msg\":{\"header\":{\"seq\":1,\"stamp\":{\"secs\":0,\"nsecs\":0},\"frame_id\":\"imu_link\"},\"orientation\":{\"x\":0,\"y\":0,\"z\":0,\"w\":1},\"orientation_covariance\":[0,0,0,0,0,0,0,0,0],\"angular_velocity\":{\"x\":0.01,\"y\":0.02,\"z\":0.03},\"angular_velocity_covariance\":[0,0,0,0,0,0,0,0,0],\"linear_acceleration\":{\"x\":9.81,\"y\":0,\"z\":0},\"linear_acceleration_covariance\":[0,0,0,0,0,0,0,0,0]}}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Motion Control",
+      "description": "Advertise cmd_vel, publish velocity commands, verify odometry subscription.",
+      "item": [
+        {
+          "name": "Advertise /cmd_vel topic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Advertise acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('advertise');",
+                  "    pm.expect(json.topic).to.equal('/cmd_vel');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"advertise\",\"topic\":\"/cmd_vel\",\"type\":\"geometry_msgs/Twist\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        },
+        {
+          "name": "Publish velocity command (forward 0.2 m/s)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Velocity publish acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('publish');",
+                  "    pm.expect(json.topic).to.equal('/cmd_vel');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"publish\",\"topic\":\"/cmd_vel\",\"msg\":{\"linear\":{\"x\":0.2,\"y\":0,\"z\":0},\"angular\":{\"x\":0,\"y\":0,\"z\":0}}}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        },
+        {
+          "name": "Subscribe to /odom for feedback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Odom subscribe acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('subscribe');",
+                  "    pm.expect(json.topic).to.equal('/odom');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"subscribe\",\"topic\":\"/odom\",\"type\":\"nav_msgs/Odometry\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Service Call Validation",
+      "description": "Call ROS services and validate response format.",
+      "item": [
+        {
+          "name": "Query /rosapi/topic_type for /rosout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Service call returns type info\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.values).to.exist;",
+                  "    pm.expect(json.op).to.be.oneOf(['service_response']);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"call_service\",\"service\":\"/rosapi/topic_type\",\"args\":{\"topic\":\"/rosout\"}}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        },
+        {
+          "name": "Unadvertise /cmd_vel (cleanup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Unadvertise acknowledged\", () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.op).to.equal('unadvertise');",
+                  "    pm.expect(json.topic).to.equal('/cmd_vel');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"op\":\"unadvertise\",\"topic\":\"/cmd_vel\"}"
+            },
+            "url": {
+              "raw": "{{rosbridgeUrl}}",
+              "host": ["{{rosbridgeUrl}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "rosbridgeUrl",
+      "value": "http://localhost:9090",
+      "type": "string"
+    }
+  ]
+}

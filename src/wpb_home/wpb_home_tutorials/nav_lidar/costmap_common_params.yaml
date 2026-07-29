@@ -1,0 +1,12 @@
+# robot_radius: 0.25
+inflation_radius: 0.28
+obstacle_range: 3.0
+raytrace_range: 3.5
+footprint: [[-0.17, -0.19], [-0.17, 0.15], [0.21, 0.15], [0.21, -0.19]]
+observation_sources: base_lidar
+base_lidar: {
+    data_type: LaserScan,
+    topic: /scan, 
+    marking: true, 
+    clearing: true
+    }

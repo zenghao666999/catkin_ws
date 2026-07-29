@@ -1,0 +1,14 @@
+build/
+devel/
+install/
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+.ros/
+_vault/
+_workflow_source/
+.DS_Store
+Thumbs.db
